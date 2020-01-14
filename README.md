@@ -1,6 +1,7 @@
-ArduTrx
+ArduTrx on Arduino MKR
 
 Ham Radio Transceiver for Arduino with Dorji DRA818 module
+Software for the ArduTrx shield on a Arduino MKR WIFI 1010 board
 
 ![ArduTrx](http://blog.generationmake.de/images/12.jpg)
 
