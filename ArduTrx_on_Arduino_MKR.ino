@@ -1,4 +1,6 @@
-/* software for arduino shield ArduTrx with Dorji or NiceRF HF modules
+/* Version for Arduino MKR WIFI 1010
+ *  
+ * software for arduino shield ArduTrx with Dorji or NiceRF HF modules
  * http://ardutrx.generationmake.de
  * bernhard@generationmake.de
  * 
@@ -8,6 +10,11 @@
  *     - Dorji DRA818V (134 - 174 MHz) http://www.dorji.com/docs/data/DRA818V.pdf
  *     - Dorji DRA818U (400 - 470 MHz) http://www.dorji.com/docs/data/DRA818U.pdf
  *
+ * Additional libraries (need to be installed in Arduino)
+ * TimerOne
+ * FlashStorage
+ *
+ ************* old history - just for information - may be deleted! ******************
  * Version 0.1   - 16.05.2016 - initial version
  * Version 0.2   - 19.05.2016 - corrected frequency string to DRA818
  *                            - set PD, H/L and PTT to definded levels
@@ -52,7 +59,7 @@
 #define SA818U     // support for SA818-U; leave uncommented for DRA818V
 
 #include <LiquidCrystal.h>
-#include <TimerOne.h>
+//#include <TimerOne.h>
 
 // define inputs and outputs
 #define IN_SQ   2
@@ -135,7 +142,8 @@ struct userparameters
 
 struct userparameters u;
 
-#include <EEPROM.h>   // eeprom library for settings
+//#include <EEPROM.h>   // eeprom library for settings
+#include <FlashAsEEPROM.h>   // eeprom library for settings
 
 //variables for transceiver
 int update=1; // update of frequency and suelch necessary
@@ -549,14 +557,14 @@ void display_menu(byte action)
 
 void factory_settings()
 {
-  EEPROM.put(0,u);  // save all user parameters to EEprom
+//  EEPROM.write(u);  // save all user parameters to EEprom
   delay(1000);
 }
 
 void reset_factory_settings()
 {
   u.ardutrx_version=0;
-  EEPROM.put(0,u);  // destroy version; after reset default values will be used
+//  EEPROM.write(u);  // destroy version; after reset default values will be used
   lcd.setCursor(0,1);
   lcd.print("press reset");
   while(1);
@@ -594,7 +602,7 @@ void setup()
 
 // check version number of eeprom content and reset if old
   byte old_version;
-  EEPROM.get(0, old_version); // previous sketch version
+//  EEPROM.get(0, old_version); // previous sketch version
   if (!digitalRead(IN_encoder0PinSW) || (old_version != u.ardutrx_version)) {
     lcd.setCursor(0,1);
     lcd.print("setting defaults");  // print boot message 2
@@ -602,14 +610,14 @@ void setup()
     factory_settings();
   }
 
-  EEPROM.get(0,u);    // get EEprom settings
+//  EEPROM.get(0,u);    // get EEprom settings
 
   display_main_screen();  // show main screen
   lcd.blink();    // enable blink funktion of cursor
 
 //enable interrupts
-  Timer1.initialize(1000);  // activate timer with 1 ms
-  Timer1.attachInterrupt(int_timer1);
+//  Timer1.initialize(1000);  // activate timer with 1 ms
+//  Timer1.attachInterrupt(int_timer1);
 }
  
 void loop()
@@ -627,7 +635,7 @@ void loop()
 // write settings to eeprom
   if(millis()>(last_settings_update+5000))  // 5 sencons past with no user action
   {
-    EEPROM.put(0,u);  // save all user parameters to EEprom  - checks if data in eeprom is the same, so no risc to destroy eeprom
+//    EEPROM.write(u);  // save all user parameters to EEprom  - checks if data in eeprom is the same, so no risc to destroy eeprom
   }
 
 // check undervoltage
@@ -918,4 +926,3 @@ void int_timer1() // handle timer interrupt for encoder
   encoder0PinALast = na;
   encoder0PinBLast = nb;
 }  
-
