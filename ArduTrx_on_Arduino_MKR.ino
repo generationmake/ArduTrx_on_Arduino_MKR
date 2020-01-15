@@ -139,11 +139,13 @@ struct userparameters
   byte tail_tone=0;
   unsigned int undervoltage=0;
 };
+typedef userparameters userparameters_t;
 
 struct userparameters u;
 
 //#include <EEPROM.h>   // eeprom library for settings
-#include <FlashAsEEPROM.h>   // eeprom library for settings
+#include <FlashStorage.h>   // eeprom library for settings
+FlashStorage(storedparameters, userparameters_t);
 
 //variables for transceiver
 int update=1; // update of frequency and suelch necessary
@@ -558,6 +560,7 @@ void display_menu(byte action)
 void factory_settings()
 {
 //  EEPROM.write(u);  // save all user parameters to EEprom
+  storedparameters.write(u);
   delay(1000);
 }
 
@@ -565,6 +568,7 @@ void reset_factory_settings()
 {
   u.ardutrx_version=0;
 //  EEPROM.write(u);  // destroy version; after reset default values will be used
+  storedparameters.write(u);
   lcd.setCursor(0,1);
   lcd.print("press reset");
   while(1);
@@ -601,9 +605,11 @@ void setup()
   delay(2000);    // wait 2 seconds
 
 // check version number of eeprom content and reset if old
-  byte old_version;
+//  byte old_version;
+  struct userparameters old_version;
 //  EEPROM.get(0, old_version); // previous sketch version
-  if (!digitalRead(IN_encoder0PinSW) || (old_version != u.ardutrx_version)) {
+  old_version = storedparameters.read();
+  if (!digitalRead(IN_encoder0PinSW) || (old_version.ardutrx_version != u.ardutrx_version)) {
     lcd.setCursor(0,1);
     lcd.print("setting defaults");  // print boot message 2
     delay(2000);    // wait 2 seconds
@@ -611,6 +617,7 @@ void setup()
   }
 
 //  EEPROM.get(0,u);    // get EEprom settings
+  u = storedparameters.read();
 
   display_main_screen();  // show main screen
   lcd.blink();    // enable blink funktion of cursor
