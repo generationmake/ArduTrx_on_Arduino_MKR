@@ -643,6 +643,7 @@ void loop()
   if(millis()>(last_settings_update+5000))  // 5 sencons past with no user action
   {
 //    EEPROM.write(u);  // save all user parameters to EEprom  - checks if data in eeprom is the same, so no risc to destroy eeprom
+    storedparameters.write(u);
   }
 
 // check undervoltage
@@ -907,6 +908,7 @@ void loop()
   }
 }
 
+//void int_timer1(struct tc_module *const module_inst) // handle timer interrupt for encoder
 void int_timer1() // handle timer interrupt for encoder
 {
   static int encoder0PinALast = HIGH;
