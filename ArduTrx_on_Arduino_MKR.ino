@@ -58,16 +58,21 @@
 //#define SA818V     // support for SA818-V; leave uncommented for DRA818V
 #define SA818U     // support for SA818-U; leave uncommented for DRA818V
 
-#include <LiquidCrystal.h>
+//#include <LiquidCrystal.h>
+#include <DogGraphicDisplay.h>
+#include "ubuntumono_b_32.h"
+#include "ubuntumono_b_16.h"
+#include "ubuntumono_b_8.h"
+DogGraphicDisplay DOG;
 //#include <TimerOne.h>
 
 // define inputs and outputs
 #define IN_SQ   2
 #define OUT_MIC 3
-#define OUT_BACKLIGHT 10
-#define OUT_PTT 11
-#define OUT_PD  12
-#define OUT_H_L 13
+#define OUT_BACKLIGHT A6
+#define OUT_PTT 4
+#define OUT_PD  5
+#define OUT_H_L 7
 // define encoder pins
 #define IN_encoder0PinA  A3
 #define IN_encoder0PinB  A4
@@ -108,7 +113,7 @@
 #endif
 
 // select the pins used on the LCD panel
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+//LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 // define some values used by the panel and buttons
 int lcd_key     = 0;
@@ -246,7 +251,8 @@ void send_dra_handshake(void)
   } while(rxlen==0);    // send command until answer is received
   rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
   rxbuffer[rxlen]=0; // remove last byte and end string
-  lcd.print(rxbuffer);  // print answer to display
+  DOG.string(0,0,UBUNTUMONO_B_16,rxbuffer,ALIGN_CENTER,STYLE_FULL);
+//  lcd.print(rxbuffer);  // print answer to display
   delay(1000);    // wait a little bit
 }
 
@@ -269,7 +275,8 @@ void send_dra_version(void)
   } while(rxlen==0);    // send command until answer is received
   rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
   rxbuffer[rxlen]=0; // remove last byte and end string
-  if(rxlen>9) lcd.print(rxbuffer+9);  // print answer to display
+  if(rxlen>9) DOG.string(0,0,UBUNTUMONO_B_16,rxbuffer+9,ALIGN_CENTER,STYLE_FULL);
+//lcd.print(rxbuffer+9);  // print answer to display
   delay(1000);    // wait a little bit
 }
 
@@ -286,7 +293,8 @@ void send_dra_rssi(void)
   } while(rxlen==0);    // send command until answer is received
   rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
   rxbuffer[rxlen]=0; // remove last byte and end string
-  if(rxlen>6) lcd.print(rxbuffer+5);  // print answer to display
+  if(rxlen>6) DOG.string(0,0,UBUNTUMONO_B_16,rxbuffer+5,ALIGN_CENTER,STYLE_FULL);
+//lcd.print(rxbuffer+5);  // print answer to display
   delay(100);    // wait a little bit
 }
 #endif
@@ -314,13 +322,16 @@ byte frequency_scan(byte dir, byte scan_run)
   freqa=(u.encoder0Pos/80);  // frequency integral part
   freqb=(u.encoder0Pos%80)*125;  // frequency fractional part
   sprintf(frxbuffer,"%03i.%04i",freqa,freqb);  // generate frequency string
-  lcd.print(frxbuffer); // dipslay scan frequency
+  DOG.string(0,0,UBUNTUMONO_B_16,frxbuffer,ALIGN_CENTER,STYLE_FULL);
+//  lcd.print(frxbuffer); // dipslay scan frequency
   if(scan_run==1) // check if scan is still running
   {
     rx=send_dra_scan(frxbuffer);  // send command to dra
   }
-  if(rx==0) lcd.print(" stop"); // print stop if signal found
-  else lcd.print(" run");       // print run
+  if(rx==0) DOG.string(0,2,UBUNTUMONO_B_16,"stop",ALIGN_CENTER,STYLE_FULL);
+//lcd.print(" stop"); // print stop if signal found
+  else DOG.string(0,0,UBUNTUMONO_B_16,"run",ALIGN_CENTER,STYLE_FULL);
+//lcd.print(" run");       // print run
   delay(100);   // wait a little bit
   return rx;    // return result
 }
@@ -337,28 +348,33 @@ void serial_in_flush(void)
 //set cursor to the right menu point
 void display_cursor(int sel)
 {
-  if(sel==3) lcd.setCursor(13,1);       // menu entry
-  else if(sel==2) lcd.setCursor(10,1);  // power level
-  else if(sel==1) lcd.setCursor(7,1);   // squelch
-  else lcd.setCursor(3,1);              // volume
+//  if(sel==3) lcd.setCursor(13,1);       // menu entry
+//  else if(sel==2) lcd.setCursor(10,1);  // power level
+//  else if(sel==1) lcd.setCursor(7,1);   // squelch
+//  else lcd.setCursor(3,1);              // volume
 }
 void display_power_level(byte level)
 {
-  lcd.setCursor(9,1);  
-  if(level==1) lcd.print("Hi");
-  else lcd.print("Lo");  
+//  lcd.setCursor(9,1);  
+  if(level==1) DOG.string(0,4,UBUNTUMONO_B_16,"Hi",ALIGN_LEFT,STYLE_FULL);
+//lcd.print("Hi");
+  else DOG.string(0,4,UBUNTUMONO_B_16,"Lo",ALIGN_LEFT,STYLE_FULL);
+//lcd.print("Lo");  
 }
 void display_main_screen(void)
 {
-  lcd.clear();  // clear display
-  lcd.setCursor(0,0);
-  lcd.print(MY_CALLSIGN); // print my callsign
-  lcd.setCursor(0,1);
-  lcd.print("VOL  SQ  Lo  M"); // print menu in second line
-  lcd.setCursor(7,1);
-  lcd.print(u.sql);    // display squelch
-  lcd.setCursor(3,1);
-  lcd.print(u.vol);    // display volume
+//  lcd.clear();  // clear display
+//  lcd.setCursor(0,0);
+//  lcd.print(MY_CALLSIGN); // print my callsign
+//  lcd.setCursor(0,1);
+//  lcd.print("VOL  SQ  Lo  M"); // print menu in second line
+//  lcd.setCursor(7,1);
+//  lcd.print(u.sql);    // display squelch
+//  lcd.setCursor(3,1);
+//  lcd.print(u.vol);    // display volume
+  DOG.clear();
+  DOG.string(0,0,UBUNTUMONO_B_16,MY_CALLSIGN,ALIGN_CENTER,STYLE_FULL);
+  DOG.string(0,6,UBUNTUMONO_B_16,"VOL        SQ",ALIGN_LEFT,STYLE_FULL);
   display_power_level(u.power_level);  // display power level
   display_cursor(sel);   // position cursor for menu  
 }
@@ -491,44 +507,62 @@ void display_menu(byte action)
   {
     if(action!=0) // key was pressed
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      if(menu_pointer==0) lcd.print("Scan"); // print menu line 1
-      if(menu_pointer==1) lcd.print("CTCSS"); // print menu line 1
-      if(menu_pointer==2) lcd.print("Filt PRE/DE-EMPH"); // print menu line 1
-      if(menu_pointer==3) lcd.print("Filter Highpass"); // print menu line 1
-      if(menu_pointer==4) lcd.print("Filter Lowpass"); // print menu line 1
-      if(menu_pointer==5) lcd.print("factory settings"); // print menu line 1
-      if(menu_pointer==6) lcd.print("module check"); // print menu line 1
-      if(menu_pointer==7) lcd.print("input voltage"); // print menu line 1
-      if(menu_pointer==8) lcd.print("set under voltage"); // print menu line 1
+      DOG.clear();
+//      lcd.clear();
+//      lcd.setCursor(0,0);
+//      if(menu_pointer==0) lcd.print("Scan"); // print menu line 1
+//      if(menu_pointer==1) lcd.print("CTCSS"); // print menu line 1
+//      if(menu_pointer==2) lcd.print("Filt PRE/DE-EMPH"); // print menu line 1
+//      if(menu_pointer==3) lcd.print("Filter Highpass"); // print menu line 1
+//      if(menu_pointer==4) lcd.print("Filter Lowpass"); // print menu line 1
+//      if(menu_pointer==5) lcd.print("factory settings"); // print menu line 1
+//      if(menu_pointer==6) lcd.print("module check"); // print menu line 1
+//      if(menu_pointer==7) lcd.print("input voltage"); // print menu line 1
+//      if(menu_pointer==8) lcd.print("set under voltage"); // print menu line 1
+//#if defined(SA818V) || defined(SA818U)
+//      if(menu_pointer==9) lcd.print("SA818 version"); // print menu line 1
+//      if(menu_pointer==10) lcd.print("SA818 RSSI"); // print menu line 1
+//      if(menu_pointer==11) lcd.print("SA818 tail tone"); // print menu line 1
+//      if(menu_pointer==12) lcd.print("back to main"); // print menu line 1
+//#else
+//      if(menu_pointer==9) lcd.print("back to main"); // print menu line 1
+//#endif
+      if(menu_pointer==0) DOG.string(0,0,UBUNTUMONO_B_16,"Scan",ALIGN_CENTER,STYLE_FULL); // print menu line 1
+      if(menu_pointer==1) DOG.string(0,0,UBUNTUMONO_B_16,"CTCSS",ALIGN_CENTER,STYLE_FULL); // print menu line 1
+      if(menu_pointer==2) DOG.string(0,0,UBUNTUMONO_B_16,"Filt PRE/DE-EMPH",ALIGN_CENTER,STYLE_FULL); // print menu line 1
+      if(menu_pointer==3) DOG.string(0,0,UBUNTUMONO_B_16,"Filter Highpass",ALIGN_CENTER,STYLE_FULL); // print menu line 1
+      if(menu_pointer==4) DOG.string(0,0,UBUNTUMONO_B_16,"Filter Lowpass",ALIGN_CENTER,STYLE_FULL); // print menu line 1
+      if(menu_pointer==5) DOG.string(0,0,UBUNTUMONO_B_16,"factory settings",ALIGN_CENTER,STYLE_FULL); // print menu line 1
+      if(menu_pointer==6) DOG.string(0,0,UBUNTUMONO_B_16,"module check",ALIGN_CENTER,STYLE_FULL); // print menu line 1
+      if(menu_pointer==7) DOG.string(0,0,UBUNTUMONO_B_16,"input voltage",ALIGN_CENTER,STYLE_FULL); // print menu line 1
+      if(menu_pointer==8) DOG.string(0,0,UBUNTUMONO_B_16,"set under voltage",ALIGN_CENTER,STYLE_FULL); // print menu line 1
 #if defined(SA818V) || defined(SA818U)
-      if(menu_pointer==9) lcd.print("SA818 version"); // print menu line 1
-      if(menu_pointer==10) lcd.print("SA818 RSSI"); // print menu line 1
-      if(menu_pointer==11) lcd.print("SA818 tail tone"); // print menu line 1
-      if(menu_pointer==12) lcd.print("back to main"); // print menu line 1
+      if(menu_pointer==9) DOG.string(0,0,UBUNTUMONO_B_16,"SA818 version",ALIGN_CENTER,STYLE_FULL); // print menu line 1
+      if(menu_pointer==10) DOG.string(0,0,UBUNTUMONO_B_16,"SA818 RSSI",ALIGN_CENTER,STYLE_FULL); // print menu line 1
+      if(menu_pointer==11) DOG.string(0,0,UBUNTUMONO_B_16,"SA818 tail tone",ALIGN_CENTER,STYLE_FULL); // print menu line 1
+      if(menu_pointer==12) DOG.string(0,0,UBUNTUMONO_B_16,"back to main",ALIGN_CENTER,STYLE_FULL); // print menu line 1
 #else
-      if(menu_pointer==9) lcd.print("back to main"); // print menu line 1
+      if(menu_pointer==9) DOG.string(0,0,UBUNTUMONO_B_16,"back to main",ALIGN_CENTER,STYLE_FULL); // print menu line 1
 #endif
       if(menu_sub==1)
       {
-        lcd.setCursor(0,1); // print menu line 2 if submenu is active
+//        lcd.setCursor(0,1); // print menu line 2 if submenu is active
         if(menu_pointer==0)
         {
           if(frequency_scan(scan_dir, scan_run)==0) scan_run=0; // stop scan if signal was found
         }
-        if(menu_pointer==1) lcd.print(strings_ctcss[u.ctcss]);
-        if(menu_pointer==2) lcd.print(strings_onoff[u.filter_pre_de_emph]);
-        if(menu_pointer==3) lcd.print(strings_onoff[u.filter_highpass]);
-        if(menu_pointer==4) lcd.print(strings_onoff[u.filter_lowpass]);
-        if(menu_pointer==5) lcd.print("press right");
+//        if(menu_pointer==1) lcd.print(strings_ctcss[u.ctcss]);
+//        if(menu_pointer==2) lcd.print(strings_onoff[u.filter_pre_de_emph]);
+//        if(menu_pointer==3) lcd.print(strings_onoff[u.filter_highpass]);
+//        if(menu_pointer==4) lcd.print(strings_onoff[u.filter_lowpass]);
+//        if(menu_pointer==5) lcd.print("press right");
         if(menu_pointer==6) send_dra_handshake();
-        if(menu_pointer==7) lcd.print(analogRead(1)*29);
-        if(menu_pointer==8) lcd.print(u.undervoltage);
+//        if(menu_pointer==7) lcd.print(analogRead(1)*29);
+//        if(menu_pointer==8) lcd.print(u.undervoltage);
 #if defined(SA818V) || defined(SA818U)
         if(menu_pointer==9) send_dra_version();
         if(menu_pointer==10) send_dra_rssi();
-        if(menu_pointer==11) lcd.print(strings_offon[u.tail_tone]);
+//        if(menu_pointer==11) lcd.print(strings_offon[u.tail_tone]);
 #endif
       }
     }
@@ -536,12 +570,12 @@ void display_menu(byte action)
     {
       if(menu_sub==1)
       {
-        lcd.setCursor(0,1); // print menu line 2 if submenu is active
+//        lcd.setCursor(0,1); // print menu line 2 if submenu is active
         if(menu_pointer==0)
         {
           if(frequency_scan(scan_dir, scan_run)==0) scan_run=0; // stop scan if signal was found
         }
-        if(menu_pointer==7) lcd.print(analogRead(1)*29);
+//        if(menu_pointer==7) lcd.print(analogRead(1)*29);
 #if defined(SA818V) || defined(SA818U)
         if(menu_pointer==10) send_dra_rssi();  // update RSSI regularly
 #endif
@@ -569,8 +603,9 @@ void reset_factory_settings()
   u.ardutrx_version=0;
 //  EEPROM.write(u);  // destroy version; after reset default values will be used
   storedparameters.write(u);
-  lcd.setCursor(0,1);
-  lcd.print("press reset");
+//  lcd.setCursor(0,1);
+//  lcd.print("press reset");
+  DOG.string(0,0,UBUNTUMONO_B_16,"press reset",ALIGN_CENTER,STYLE_FULL);
   while(1);
 }
 
@@ -597,11 +632,15 @@ void setup()
 // init serial
   SerialDra.begin(9600); // start serial for communication with dra818
 // init display
-  lcd.begin(16, 2);  // start display library
-  lcd.setCursor(0,0);
-  lcd.print(" ArduTrx - 0.11 "); // print boot message 1
-  lcd.setCursor(0,1);
-  lcd.print("   24.11.2018   ");  // print boot message 2
+  DOG.initialize(6,0,0,0,1,DOGM128);   //SS = 6, 0,0= use Hardware SPI, 0 = A0, 1 = RESET, EA DOGM128-6 (=128x64 dots)
+  DOG.clear();  //clear whole display
+  DOG.string(0,3,UBUNTUMONO_B_16,"ArduTrx - 0.11",ALIGN_CENTER,STYLE_FULL_INVERSE);
+  DOG.string(0,5,UBUNTUMONO_B_16,"16.01.2020",ALIGN_CENTER);
+//  lcd.begin(16, 2);  // start display library
+//  lcd.setCursor(0,0);
+//  lcd.print(" ArduTrx - 0.11 "); // print boot message 1
+//  lcd.setCursor(0,1);
+//  lcd.print("   24.11.2018   ");  // print boot message 2
   delay(2000);    // wait 2 seconds
 
 // check version number of eeprom content and reset if old
@@ -610,8 +649,9 @@ void setup()
 //  EEPROM.get(0, old_version); // previous sketch version
   old_version = storedparameters.read();
   if (!digitalRead(IN_encoder0PinSW) || (old_version.ardutrx_version != u.ardutrx_version)) {
-    lcd.setCursor(0,1);
-    lcd.print("setting defaults");  // print boot message 2
+    DOG.string(0,6,UBUNTUMONO_B_16,"setting defaults",ALIGN_CENTER);
+//    lcd.setCursor(0,1);
+//    lcd.print("setting defaults");  // print boot message 2
     delay(2000);    // wait 2 seconds
     factory_settings();
   }
@@ -620,7 +660,7 @@ void setup()
   u = storedparameters.read();
 
   display_main_screen();  // show main screen
-  lcd.blink();    // enable blink funktion of cursor
+//  lcd.blink();    // enable blink funktion of cursor
 
 //enable interrupts
 //  Timer1.initialize(1000);  // activate timer with 1 ms
@@ -638,12 +678,13 @@ void loop()
   static int sqin_old=0;  // variable for squelch input to store old value
   int press = 0;
   static int Merker = 0;    // static to save status
+  char buffer[50];
 
 // write settings to eeprom
   if(millis()>(last_settings_update+5000))  // 5 sencons past with no user action
   {
 //    EEPROM.write(u);  // save all user parameters to EEprom  - checks if data in eeprom is the same, so no risc to destroy eeprom
-    storedparameters.write(u);
+//    storedparameters.write(u);
   }
 
 // check undervoltage
@@ -666,37 +707,39 @@ void loop()
 #if defined(SA818V) || defined(SA818U)
   if(sqin==0&&menu_in==0)   // squelch and no menu active
   {
-    lcd.setCursor(0,0);
-    send_dra_rssi();
+//    lcd.setCursor(0,0);
+//    send_dra_rssi();
   }
 #endif
   if(sqin!=sqin_old)    // compare if squelch has changed
   {
     sqin_old=sqin;      // store new value of squelch
-    lcd.setCursor(15,1);    // go to last position of display
+//    lcd.setCursor(15,1);    // go to last position of display
     if(sqin)
     {
-      lcd.print(" ");  // print blank if no rx
+//      lcd.print(" ");  // print blank if no rx
+      DOG.string(0,0,UBUNTUMONO_B_16," ",ALIGN_LEFT);
 #if defined(SA818V) || defined(SA818U)
       if(menu_in==0)   // no menu active
       {
-        lcd.setCursor(0,0);
-        lcd.print(MY_CALLSIGN); // print my callsign        
+//        lcd.setCursor(0,0);
+//        lcd.print(MY_CALLSIGN); // print my callsign        
       }
 #endif
     }
     else 
     {
-      lcd.print("*");      // print * if rx
+//      lcd.print("*");      // print * if rx
+      DOG.string(0,0,UBUNTUMONO_B_16,"*",ALIGN_LEFT);
 #if defined(SA818V) || defined(SA818U)
       if(menu_in==0)   // no menu active
       {
-        lcd.setCursor(0,0);
-        lcd.print("       "); // delete my callsign        
+//        lcd.setCursor(0,0);
+//        lcd.print("       "); // delete my callsign        
       }
 #endif
     }
-    display_cursor(sel);         // set cursor to menu position
+//    display_cursor(sel);         // set cursor to menu position
   }
 
 //encoder push button
@@ -709,7 +752,7 @@ void loop()
     set_power_level(u.power_level); // send it to dra818
     Merker = 1;
     display_power_level(u.power_level);  // display power level
-    display_cursor(sel);         // set cursor to menu position
+ //   display_cursor(sel);         // set cursor to menu position
     delay(10);   
   }
   if((press == 1) && (Merker == 1))
@@ -777,7 +820,7 @@ void loop()
             last_settings_update=millis();  // trigger update
             set_power_level(u.power_level); // send it to dra818
             display_power_level(u.power_level);  // display power level
-            lcd.setCursor(10,1);  
+  //          lcd.setCursor(10,1);  
           }
           if(sel==3)    // menu
           {
@@ -813,7 +856,7 @@ void loop()
             last_settings_update=millis();  // trigger update
             set_power_level(u.power_level); // send it to dra818
             display_power_level(u.power_level);  // display power level
-            lcd.setCursor(10,1);  
+//            lcd.setCursor(10,1);  
           }
           if(sel==3)    // menu
           {
@@ -860,16 +903,18 @@ void loop()
     if(freqrx>TUNE_LIMIT_UPPER) freqrx=TUNE_LIMIT_UPPER;  // 174.0000 MHz
     if(freqrx<TUNE_LIMIT_LOWER) freqrx=TUNE_LIMIT_LOWER;  // 134.0000 MHz
      
-    lcd.setCursor(7,0);
+//    lcd.setCursor(7,0);
     if((freqrx>=SPLIT_LIMIT_LOWER)&&(freqrx<=SPLIT_LIMIT_UPPER))   // split function for relais 145.6000 - 145.8000 MHz
     {
       freqtx=freqrx-SPLIT_DIFF;   // set tx frequency 600 kHz lower
-      lcd.print("-");     // display -
+//      lcd.print("-");     // display -
+      DOG.string(0,2,UBUNTUMONO_B_16,"-",ALIGN_LEFT);
     }
     else 
     {
       freqtx=freqrx;    // set tx frequency = rx frequency
-      lcd.print(" ");
+//      lcd.print(" ");
+      DOG.string(0,2,UBUNTUMONO_B_16," ",ALIGN_LEFT);
     }
 
     freqa=(freqrx/80);  // frequency integral part
@@ -878,11 +923,13 @@ void loop()
     freqa=(freqtx/80);  // frequency integral part
     freqb=(freqtx%80)*125;  // frequency fractional part
     sprintf(ftxbuffer,"%03i.%04i",freqa,freqb);  // generate frequency string
-    lcd.setCursor(8,0);
-    lcd.print(frxbuffer);      // display frequency
+//    lcd.setCursor(8,0);
+    DOG.string(0,0,UBUNTUMONO_B_32,frxbuffer,ALIGN_CENTER,STYLE_FULL);
+//    lcd.print(frxbuffer);      // display frequency
     send_dra(frxbuffer,ftxbuffer,u.sql,u.ctcss);    // update volume on dra818
-    lcd.setCursor(7,1);
-    lcd.print(u.sql);    // display squelch
+//    lcd.setCursor(7,1);
+//    lcd.print(u.sql);    // display squelch
+    DOG.string(112,6,UBUNTUMONO_B_16,itoa(u.sql,buffer,10));
     display_cursor(sel);     // display menu
   }
   if(updatevol==1)    // update volume
@@ -890,8 +937,9 @@ void loop()
     updatevol=0;
     last_settings_update=millis();  // trigger update
     send_dravol(u.vol);  // update volume on dra818
-    lcd.setCursor(3,1);
-    lcd.print(u.vol);    // display volume
+//    lcd.setCursor(3,1);
+//    lcd.print(u.vol);    // display volume
+    DOG.string(30,6,UBUNTUMONO_B_16,itoa(u.vol,buffer,10));
     display_cursor(sel);   // display menu
   }
   if(update_filter==1)    // update filter
