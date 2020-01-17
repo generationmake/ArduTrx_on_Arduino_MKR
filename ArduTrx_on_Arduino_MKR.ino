@@ -58,7 +58,6 @@
 //#define SA818V     // support for SA818-V; leave uncommented for DRA818V
 #define SA818U     // support for SA818-U; leave uncommented for DRA818V
 
-//#include <LiquidCrystal.h>
 #include <DogGraphicDisplay.h>
 #include "ubuntumono_b_32.h"
 #include "ubuntumono_b_16.h"
@@ -111,9 +110,6 @@ DogGraphicDisplay DOG;
 #else // arduino uno
   #define SerialDra Serial
 #endif
-
-// select the pins used on the LCD panel
-//LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 // define some values used by the panel and buttons
 int lcd_key     = 0;
@@ -173,15 +169,6 @@ int read_LCD_buttons()
   if (adc_key_in < 450)  return btnDOWN; 
   if (adc_key_in < 650)  return btnLEFT; 
   if (adc_key_in < 850)  return btnSELECT;  
-
-  // For V1.0 comment the other threshold and use the one below:
-/*
-  if (adc_key_in < 50)   return btnRIGHT;  
-  if (adc_key_in < 195)  return btnUP; 
-  if (adc_key_in < 380)  return btnDOWN; 
-  if (adc_key_in < 555)  return btnLEFT; 
-  if (adc_key_in < 790)  return btnSELECT;   
-*/
 
   return btnNONE;  // when all others fail, return this...
 }
@@ -252,7 +239,6 @@ void send_dra_handshake(void)
   rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
   rxbuffer[rxlen]=0; // remove last byte and end string
   DOG.string(0,0,UBUNTUMONO_B_16,rxbuffer,ALIGN_CENTER,STYLE_FULL);
-//  lcd.print(rxbuffer);  // print answer to display
   delay(1000);    // wait a little bit
 }
 
@@ -276,7 +262,6 @@ void send_dra_version(void)
   rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
   rxbuffer[rxlen]=0; // remove last byte and end string
   if(rxlen>9) DOG.string(0,0,UBUNTUMONO_B_16,rxbuffer+9,ALIGN_CENTER,STYLE_FULL);
-//lcd.print(rxbuffer+9);  // print answer to display
   delay(1000);    // wait a little bit
 }
 
@@ -294,7 +279,6 @@ void send_dra_rssi(void)
   rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
   rxbuffer[rxlen]=0; // remove last byte and end string
   if(rxlen>6) DOG.string(0,0,UBUNTUMONO_B_16,rxbuffer+5,ALIGN_CENTER,STYLE_FULL);
-//lcd.print(rxbuffer+5);  // print answer to display
   delay(100);    // wait a little bit
 }
 #endif
@@ -323,15 +307,12 @@ byte frequency_scan(byte dir, byte scan_run)
   freqb=(u.encoder0Pos%80)*125;  // frequency fractional part
   sprintf(frxbuffer,"%03i.%04i",freqa,freqb);  // generate frequency string
   DOG.string(0,0,UBUNTUMONO_B_16,frxbuffer,ALIGN_CENTER,STYLE_FULL);
-//  lcd.print(frxbuffer); // dipslay scan frequency
   if(scan_run==1) // check if scan is still running
   {
     rx=send_dra_scan(frxbuffer);  // send command to dra
   }
   if(rx==0) DOG.string(0,2,UBUNTUMONO_B_16,"stop",ALIGN_CENTER,STYLE_FULL);
-//lcd.print(" stop"); // print stop if signal found
   else DOG.string(0,0,UBUNTUMONO_B_16,"run",ALIGN_CENTER,STYLE_FULL);
-//lcd.print(" run");       // print run
   delay(100);   // wait a little bit
   return rx;    // return result
 }
@@ -903,17 +884,14 @@ void loop()
     if(freqrx>TUNE_LIMIT_UPPER) freqrx=TUNE_LIMIT_UPPER;  // 174.0000 MHz
     if(freqrx<TUNE_LIMIT_LOWER) freqrx=TUNE_LIMIT_LOWER;  // 134.0000 MHz
      
-//    lcd.setCursor(7,0);
     if((freqrx>=SPLIT_LIMIT_LOWER)&&(freqrx<=SPLIT_LIMIT_UPPER))   // split function for relais 145.6000 - 145.8000 MHz
     {
       freqtx=freqrx-SPLIT_DIFF;   // set tx frequency 600 kHz lower
-//      lcd.print("-");     // display -
       DOG.string(0,2,UBUNTUMONO_B_16,"-",ALIGN_LEFT);
     }
     else 
     {
       freqtx=freqrx;    // set tx frequency = rx frequency
-//      lcd.print(" ");
       DOG.string(0,2,UBUNTUMONO_B_16," ",ALIGN_LEFT);
     }
 
@@ -923,12 +901,8 @@ void loop()
     freqa=(freqtx/80);  // frequency integral part
     freqb=(freqtx%80)*125;  // frequency fractional part
     sprintf(ftxbuffer,"%03i.%04i",freqa,freqb);  // generate frequency string
-//    lcd.setCursor(8,0);
     DOG.string(0,0,UBUNTUMONO_B_32,frxbuffer,ALIGN_CENTER,STYLE_FULL);
-//    lcd.print(frxbuffer);      // display frequency
     send_dra(frxbuffer,ftxbuffer,u.sql,u.ctcss);    // update volume on dra818
-//    lcd.setCursor(7,1);
-//    lcd.print(u.sql);    // display squelch
     DOG.string(112,6,UBUNTUMONO_B_16,itoa(u.sql,buffer,10));
     display_cursor(sel);     // display menu
   }
@@ -937,8 +911,6 @@ void loop()
     updatevol=0;
     last_settings_update=millis();  // trigger update
     send_dravol(u.vol);  // update volume on dra818
-//    lcd.setCursor(3,1);
-//    lcd.print(u.vol);    // display volume
     DOG.string(30,6,UBUNTUMONO_B_16,itoa(u.vol,buffer,10));
     display_cursor(sel);   // display menu
   }
