@@ -55,8 +55,8 @@
 #define MY_CALLSIGN "ArduTrx"            // callsign here will display on line 1 
 // select your HF module
 //#define DRA818U     // support for DRA818U; leave uncommented for DRA818V
-//#define SA818V     // support for SA818-V; leave uncommented for DRA818V
-#define SA818U     // support for SA818-U; leave uncommented for DRA818V
+#define SA818V     // support for SA818-V; leave uncommented for DRA818V
+//#define SA818U     // support for SA818-U; leave uncommented for DRA818V
 
 #include <DogGraphicDisplay.h>
 #include "ubuntumono_b_32.h"
@@ -108,7 +108,7 @@ DogGraphicDisplay DOG;
 #ifdef __AVR_ATmega32U4__
   #define SerialDra Serial1
 #else // arduino uno
-  #define SerialDra Serial
+  #define SerialDra Serial1
 #endif
 
 // define some values used by the panel and buttons
@@ -264,7 +264,7 @@ void send_dra_handshake(void)
   } while(rxlen==0);    // send command until answer is received
   rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
   rxbuffer[rxlen]=0; // remove last byte and end string
-  DOG.string(0,0,UBUNTUMONO_B_16,rxbuffer,ALIGN_CENTER,STYLE_FULL);
+  DOG.string(0,2,UBUNTUMONO_B_16,rxbuffer,ALIGN_CENTER,STYLE_FULL);
   delay(1000);    // wait a little bit
 }
 
@@ -287,12 +287,12 @@ void send_dra_version(void)
   } while(rxlen==0);    // send command until answer is received
   rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
   rxbuffer[rxlen]=0; // remove last byte and end string
-  if(rxlen>9) DOG.string(0,0,UBUNTUMONO_B_16,rxbuffer+9,ALIGN_CENTER,STYLE_FULL);
+  if(rxlen>9) DOG.string(0,2,UBUNTUMONO_B_16,rxbuffer+9,ALIGN_CENTER,STYLE_FULL);
   delay(1000);    // wait a little bit
 }
 
 //send RSSI command to sa818 
-void send_dra_rssi(void)
+void send_dra_rssi(byte pos)
 {
   char rxbuffer[20];  // buffer for response string
   byte rxlen=0;   // counter for received bytes
@@ -304,7 +304,11 @@ void send_dra_rssi(void)
   } while(rxlen==0);    // send command until answer is received
   rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
   rxbuffer[rxlen]=0; // remove last byte and end string
-  if(rxlen>6) DOG.string(0,0,UBUNTUMONO_B_16,rxbuffer+5,ALIGN_CENTER,STYLE_FULL);
+  if(rxlen>6)
+  {
+    if(pos==0) DOG.string(0,2,UBUNTUMONO_B_16,rxbuffer+5,ALIGN_CENTER,STYLE_FULL);
+    else DOG.string(0,4,UBUNTUMONO_B_8,rxbuffer+5,ALIGN_CENTER);
+  }
   delay(100);    // wait a little bit
 }
 #endif
@@ -332,7 +336,7 @@ byte frequency_scan(byte dir, byte scan_run)
   freqa=(u.encoder0Pos/80);  // frequency integral part
   freqb=(u.encoder0Pos%80)*125;  // frequency fractional part
   sprintf(frxbuffer,"%03i.%04i",freqa,freqb);  // generate frequency string
-  DOG.string(0,0,UBUNTUMONO_B_16,frxbuffer,ALIGN_CENTER,STYLE_FULL);
+  DOG.string(0,4,UBUNTUMONO_B_16,frxbuffer,ALIGN_CENTER,STYLE_FULL);
   if(scan_run==1) // check if scan is still running
   {
     rx=send_dra_scan(frxbuffer);  // send command to dra
@@ -537,7 +541,7 @@ void display_menu(byte action)
 
 #if defined(SA818V) || defined(SA818U)
         if(menu_pointer==9) send_dra_version();
-        if(menu_pointer==10) send_dra_rssi();
+        if(menu_pointer==10) send_dra_rssi(0);
         if(menu_pointer==11) DOG.string(0,2,UBUNTUMONO_B_16,strings_onoff[u.tail_tone],ALIGN_CENTER,STYLE_FULL);
 #endif
       }
@@ -553,7 +557,7 @@ void display_menu(byte action)
         }
 //        if(menu_pointer==7) lcd.print(analogRead(1)*29);
 #if defined(SA818V) || defined(SA818U)
-        if(menu_pointer==10) send_dra_rssi();  // update RSSI regularly
+        if(menu_pointer==10) send_dra_rssi(0);  // update RSSI regularly
 #endif
       }      
     }
@@ -674,34 +678,28 @@ void loop()
 #if defined(SA818V) || defined(SA818U)
   if(sqin==0&&menu_in==0)   // squelch and no menu active
   {
-//    lcd.setCursor(0,0);
-//    send_dra_rssi();
+    send_dra_rssi(1);
   }
 #endif
   if(sqin!=sqin_old)    // compare if squelch has changed
   {
     sqin_old=sqin;      // store new value of squelch
-//    lcd.setCursor(15,1);    // go to last position of display
     if(sqin)
     {
-//      lcd.print(" ");  // print blank if no rx
-      DOG.string(0,0,UBUNTUMONO_B_16," ",ALIGN_LEFT);
+      DOG.string(0,3,UBUNTUMONO_B_8," ",ALIGN_RIGHT); // print blank if no rx
 #if defined(SA818V) || defined(SA818U)
       if(menu_in==0)   // no menu active
       {
-//        lcd.setCursor(0,0);
-//        lcd.print(MY_CALLSIGN); // print my callsign        
+        DOG.string(0,4,UBUNTUMONO_B_8,MY_CALLSIGN,ALIGN_CENTER); // print my callsign 
       }
 #endif
     }
     else 
     {
-//      lcd.print("*");      // print * if rx
-      DOG.string(0,0,UBUNTUMONO_B_16,"*",ALIGN_LEFT);
+      DOG.string(0,3,UBUNTUMONO_B_8,"*",ALIGN_RIGHT);     // print * if rx
 #if defined(SA818V) || defined(SA818U)
       if(menu_in==0)   // no menu active
       {
-//        lcd.setCursor(0,0);
 //        lcd.print("       "); // delete my callsign        
       }
 #endif
@@ -870,12 +868,12 @@ void loop()
     if((freqrx>=SPLIT_LIMIT_LOWER)&&(freqrx<=SPLIT_LIMIT_UPPER))   // split function for relais 145.6000 - 145.8000 MHz
     {
       freqtx=freqrx-SPLIT_DIFF;   // set tx frequency 600 kHz lower
-      DOG.string(0,2,UBUNTUMONO_B_16,"-",ALIGN_LEFT);
+      DOG.string(0,3,UBUNTUMONO_B_8,"-",ALIGN_LEFT);
     }
     else 
     {
       freqtx=freqrx;    // set tx frequency = rx frequency
-      DOG.string(0,2,UBUNTUMONO_B_16," ",ALIGN_LEFT);
+      DOG.string(0,3,UBUNTUMONO_B_8," ",ALIGN_LEFT);
     }
 
     freqa=(freqrx/80);  // frequency integral part
@@ -887,6 +885,14 @@ void loop()
     DOG.string(0,0,UBUNTUMONO_B_32,frxbuffer,ALIGN_CENTER,STYLE_FULL);
     send_dra(frxbuffer,ftxbuffer,u.sql,u.ctcss);    // update volume on dra818
     DOG.string(112,6,UBUNTUMONO_B_16,itoa(u.sql,buffer,10));
+    if((freqrx>=SPLIT_LIMIT_LOWER)&&(freqrx<=SPLIT_LIMIT_UPPER))   // split function for relais 145.6000 - 145.8000 MHz
+    {
+      DOG.string(0,3,UBUNTUMONO_B_8,"-",ALIGN_LEFT);
+    }
+    else 
+    {
+      DOG.string(0,3,UBUNTUMONO_B_8," ",ALIGN_LEFT);
+    }
     display_cursor(sel,u.power_level);
   }
   if(updatevol==1)    // update volume
