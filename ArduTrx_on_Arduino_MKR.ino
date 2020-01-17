@@ -353,38 +353,25 @@ void serial_in_flush(void)
 }
 
 // display and menu routines
-//set cursor to the right menu point
-void display_cursor(int sel)
+// display active menu point inverse
+void display_cursor(int sel, byte level)
 {
-//  if(sel==3) lcd.setCursor(13,1);       // menu entry
-//  else if(sel==2) lcd.setCursor(10,1);  // power level
-//  else if(sel==1) lcd.setCursor(7,1);   // squelch
-//  else lcd.setCursor(3,1);              // volume
+  byte style=STYLE_NORMAL;
+  if(sel==2) style=STYLE_INVERSE; // display power level inverse when selected
+  if(level==1) DOG.string(0,4,UBUNTUMONO_B_16,"High",ALIGN_LEFT,style);
+  else DOG.string(0,4,UBUNTUMONO_B_16,"Low ",ALIGN_LEFT,style);
+  if(sel==0) DOG.string(0,6,UBUNTUMONO_B_16,"VOL",ALIGN_LEFT,STYLE_INVERSE); // volume
+  else DOG.string(0,6,UBUNTUMONO_B_16,"VOL",ALIGN_LEFT,STYLE_NORMAL); // volume
+  if(sel==1) DOG.string(80,6,UBUNTUMONO_B_16,"SQ",ALIGN_LEFT,STYLE_INVERSE); // squelch
+  else DOG.string(80,6,UBUNTUMONO_B_16,"SQ",ALIGN_LEFT,STYLE_NORMAL); // squelch
+  if(sel==3) DOG.string(0,4,UBUNTUMONO_B_16,"MENU",ALIGN_RIGHT,STYLE_INVERSE); // menu
+  else DOG.string(0,4,UBUNTUMONO_B_16,"MENU",ALIGN_RIGHT,STYLE_NORMAL); // menu
 }
-void display_power_level(byte level)
-{
-//  lcd.setCursor(9,1);  
-  if(level==1) DOG.string(0,4,UBUNTUMONO_B_16,"Hi",ALIGN_LEFT,STYLE_FULL);
-//lcd.print("Hi");
-  else DOG.string(0,4,UBUNTUMONO_B_16,"Lo",ALIGN_LEFT,STYLE_FULL);
-//lcd.print("Lo");  
-}
+
 void display_main_screen(void)
 {
-//  lcd.clear();  // clear display
-//  lcd.setCursor(0,0);
-//  lcd.print(MY_CALLSIGN); // print my callsign
-//  lcd.setCursor(0,1);
-//  lcd.print("VOL  SQ  Lo  M"); // print menu in second line
-//  lcd.setCursor(7,1);
-//  lcd.print(u.sql);    // display squelch
-//  lcd.setCursor(3,1);
-//  lcd.print(u.vol);    // display volume
   DOG.clear();
-  DOG.string(0,0,UBUNTUMONO_B_16,MY_CALLSIGN,ALIGN_CENTER,STYLE_FULL);
-  DOG.string(0,6,UBUNTUMONO_B_16,"VOL        SQ",ALIGN_LEFT,STYLE_FULL);
-  display_power_level(u.power_level);  // display power level
-  display_cursor(sel);   // position cursor for menu  
+  display_cursor(sel,u.power_level);   // position cursor for menu  
 }
 //menu functions
 void display_menu(byte action)
@@ -611,8 +598,6 @@ void reset_factory_settings()
   u.ardutrx_version=0;
 //  EEPROM.write(u);  // destroy version; after reset default values will be used
   storedparameters.write(u);
-//  lcd.setCursor(0,1);
-//  lcd.print("press reset");
   DOG.string(0,0,UBUNTUMONO_B_16,"press reset",ALIGN_CENTER,STYLE_FULL);
   while(1);
 }
@@ -642,13 +627,8 @@ void setup()
 // init display
   DOG.initialize(6,0,0,0,1,DOGM128);   //SS = 6, 0,0= use Hardware SPI, 0 = A0, 1 = RESET, EA DOGM128-6 (=128x64 dots)
   DOG.clear();  //clear whole display
-  DOG.string(0,3,UBUNTUMONO_B_16,"ArduTrx - 0.11",ALIGN_CENTER,STYLE_FULL_INVERSE);
-  DOG.string(0,5,UBUNTUMONO_B_16,"16.01.2020",ALIGN_CENTER);
-//  lcd.begin(16, 2);  // start display library
-//  lcd.setCursor(0,0);
-//  lcd.print(" ArduTrx - 0.11 "); // print boot message 1
-//  lcd.setCursor(0,1);
-//  lcd.print("   24.11.2018   ");  // print boot message 2
+  DOG.string(0,2,UBUNTUMONO_B_16,"ArduTrx - 0.11",ALIGN_CENTER,STYLE_FULL_INVERSE);
+  DOG.string(0,4,UBUNTUMONO_B_16,"17.01.2020",ALIGN_CENTER);
   delay(2000);    // wait 2 seconds
 
 // check version number of eeprom content and reset if old
@@ -658,8 +638,6 @@ void setup()
   old_version = storedparameters.read();
   if (!digitalRead(IN_encoder0PinSW) || (old_version.ardutrx_version != u.ardutrx_version)) {
     DOG.string(0,6,UBUNTUMONO_B_16,"setting defaults",ALIGN_CENTER);
-//    lcd.setCursor(0,1);
-//    lcd.print("setting defaults");  // print boot message 2
     delay(2000);    // wait 2 seconds
     factory_settings();
   }
@@ -668,7 +646,6 @@ void setup()
   u = storedparameters.read();
 
   display_main_screen();  // show main screen
-//  lcd.blink();    // enable blink funktion of cursor
 
 //enable interrupts
 //  Timer1.initialize(1000);  // activate timer with 1 ms
@@ -760,8 +737,7 @@ void loop()
     last_settings_update=millis();  // trigger update
     set_power_level(u.power_level); // send it to dra818
     Merker = 1;
-    display_power_level(u.power_level);  // display power level
- //   display_cursor(sel);         // set cursor to menu position
+    display_cursor(sel,u.power_level);
     delay(10);   
   }
   if((press == 1) && (Merker == 1))
@@ -785,7 +761,7 @@ void loop()
         {
           sel++;
           sel=sel%4;        // our menu has 4 points
-          display_cursor(sel);
+          display_cursor(sel,u.power_level);
         }
         delay(200);
         break;
@@ -800,7 +776,7 @@ void loop()
         {
           sel+=3;
           sel=sel%4;        // our menu has 4 points
-          display_cursor(sel);
+          display_cursor(sel,u.power_level);
         }
         delay(200);
         break;
@@ -828,8 +804,7 @@ void loop()
             u.power_level=1;    // output = 1W
             last_settings_update=millis();  // trigger update
             set_power_level(u.power_level); // send it to dra818
-            display_power_level(u.power_level);  // display power level
-  //          lcd.setCursor(10,1);  
+            display_cursor(sel,u.power_level);
           }
           if(sel==3)    // menu
           {
@@ -864,8 +839,7 @@ void loop()
             u.power_level=0;    // output = 0.5W
             last_settings_update=millis();  // trigger update
             set_power_level(u.power_level); // send it to dra818
-            display_power_level(u.power_level);  // display power level
-//            lcd.setCursor(10,1);  
+            display_cursor(sel,u.power_level);
           }
           if(sel==3)    // menu
           {
@@ -932,7 +906,7 @@ void loop()
     DOG.string(0,0,UBUNTUMONO_B_32,frxbuffer,ALIGN_CENTER,STYLE_FULL);
     send_dra(frxbuffer,ftxbuffer,u.sql,u.ctcss);    // update volume on dra818
     DOG.string(112,6,UBUNTUMONO_B_16,itoa(u.sql,buffer,10));
-    display_cursor(sel);     // display menu
+    display_cursor(sel,u.power_level);
   }
   if(updatevol==1)    // update volume
   {
@@ -940,7 +914,7 @@ void loop()
     last_settings_update=millis();  // trigger update
     send_dravol(u.vol);  // update volume on dra818
     DOG.string(30,6,UBUNTUMONO_B_16,itoa(u.vol,buffer,10));
-    display_cursor(sel);   // display menu
+    display_cursor(sel,u.power_level);
   }
   if(update_filter==1)    // update filter
   {
