@@ -190,7 +190,6 @@ int read_LCD_buttons()
   // my buttons when read are centered at these valies: 0, 144, 329, 504, 741
   // we add approx 50 to those values and check to see if we are close
   if (adc_key_in > 1000) return btnNONE; // We make this the 1st option for speed reasons since it will be the most likely result
-  // For V1.1 us this threshold
   if (adc_key_in < 50)   return btnRIGHT;  
   if (adc_key_in < 250)  return btnUP; 
   if (adc_key_in < 450)  return btnDOWN; 
@@ -384,6 +383,7 @@ void display_menu(byte action)
   const char* strings_ctcss[]={"none","67 Hz", "71.9 Hz", "74.4 Hz", "77 Hz", "79.7 Hz", "82.5 Hz", "85.4 Hz", "88.5 Hz", "91.5 Hz",  "94.8 Hz", "97.4 Hz", "100 Hz", "103.5 Hz", "107.2 Hz", "110.9 Hz", "114.8 Hz", "118.8 Hz", "123 Hz", "127.3 Hz", "131.8 Hz", "136.5 Hz", "141.3 Hz", "146.2 Hz", "151.4 Hz", "156.7 Hz", "162.2 Hz", "167.9 Hz", "173.8 Hz", "179.9 Hz", "186.2 Hz", "192.8 Hz", "203.5 Hz", "210.7 Hz", "218.1 Hz", "225.7 Hz", "233.6 Hz", "241.8 Hz", "250.3 Hz"};
   const char* strings_onoff[]={"on","off"};
   const char* strings_offon[]={"off","on"};
+  char buffer[50];
 
 
   if(action==1) // right
@@ -503,25 +503,6 @@ void display_menu(byte action)
     if(action!=0) // key was pressed
     {
       DOG.clear();
-//      lcd.clear();
-//      lcd.setCursor(0,0);
-//      if(menu_pointer==0) lcd.print("Scan"); // print menu line 1
-//      if(menu_pointer==1) lcd.print("CTCSS"); // print menu line 1
-//      if(menu_pointer==2) lcd.print("Filt PRE/DE-EMPH"); // print menu line 1
-//      if(menu_pointer==3) lcd.print("Filter Highpass"); // print menu line 1
-//      if(menu_pointer==4) lcd.print("Filter Lowpass"); // print menu line 1
-//      if(menu_pointer==5) lcd.print("factory settings"); // print menu line 1
-//      if(menu_pointer==6) lcd.print("module check"); // print menu line 1
-//      if(menu_pointer==7) lcd.print("input voltage"); // print menu line 1
-//      if(menu_pointer==8) lcd.print("set under voltage"); // print menu line 1
-//#if defined(SA818V) || defined(SA818U)
-//      if(menu_pointer==9) lcd.print("SA818 version"); // print menu line 1
-//      if(menu_pointer==10) lcd.print("SA818 RSSI"); // print menu line 1
-//      if(menu_pointer==11) lcd.print("SA818 tail tone"); // print menu line 1
-//      if(menu_pointer==12) lcd.print("back to main"); // print menu line 1
-//#else
-//      if(menu_pointer==9) lcd.print("back to main"); // print menu line 1
-//#endif
       if(menu_pointer==0) DOG.string(0,0,UBUNTUMONO_B_16,"Scan",ALIGN_CENTER,STYLE_FULL); // print menu line 1
       if(menu_pointer==1) DOG.string(0,0,UBUNTUMONO_B_16,"CTCSS",ALIGN_CENTER,STYLE_FULL); // print menu line 1
       if(menu_pointer==2) DOG.string(0,0,UBUNTUMONO_B_16,"Filt PRE/DE-EMPH",ALIGN_CENTER,STYLE_FULL); // print menu line 1
@@ -541,23 +522,23 @@ void display_menu(byte action)
 #endif
       if(menu_sub==1)
       {
-//        lcd.setCursor(0,1); // print menu line 2 if submenu is active
         if(menu_pointer==0)
         {
           if(frequency_scan(scan_dir, scan_run)==0) scan_run=0; // stop scan if signal was found
         }
-//        if(menu_pointer==1) lcd.print(strings_ctcss[u.ctcss]);
-//        if(menu_pointer==2) lcd.print(strings_onoff[u.filter_pre_de_emph]);
-//        if(menu_pointer==3) lcd.print(strings_onoff[u.filter_highpass]);
-//        if(menu_pointer==4) lcd.print(strings_onoff[u.filter_lowpass]);
-//        if(menu_pointer==5) lcd.print("press right");
+        if(menu_pointer==1) DOG.string(0,2,UBUNTUMONO_B_16,strings_ctcss[u.ctcss],ALIGN_CENTER,STYLE_FULL);
+        if(menu_pointer==2) DOG.string(0,2,UBUNTUMONO_B_16,strings_onoff[u.filter_pre_de_emph],ALIGN_CENTER,STYLE_FULL);
+        if(menu_pointer==3) DOG.string(0,2,UBUNTUMONO_B_16,strings_onoff[u.filter_highpass],ALIGN_CENTER,STYLE_FULL);
+        if(menu_pointer==4) DOG.string(0,2,UBUNTUMONO_B_16,strings_onoff[u.filter_lowpass],ALIGN_CENTER,STYLE_FULL);
+        if(menu_pointer==5) DOG.string(0,2,UBUNTUMONO_B_16,"press right",ALIGN_CENTER,STYLE_FULL);
         if(menu_pointer==6) send_dra_handshake();
-//        if(menu_pointer==7) lcd.print(analogRead(1)*29);
-//        if(menu_pointer==8) lcd.print(u.undervoltage);
+        if(menu_pointer==7) DOG.string(0,2,UBUNTUMONO_B_16,itoa(analogRead(1)*29,buffer,10),ALIGN_CENTER,STYLE_FULL);
+        if(menu_pointer==8) DOG.string(0,2,UBUNTUMONO_B_16,itoa(u.undervoltage,buffer,10),ALIGN_CENTER,STYLE_FULL);
+
 #if defined(SA818V) || defined(SA818U)
         if(menu_pointer==9) send_dra_version();
         if(menu_pointer==10) send_dra_rssi();
-//        if(menu_pointer==11) lcd.print(strings_offon[u.tail_tone]);
+        if(menu_pointer==11) DOG.string(0,2,UBUNTUMONO_B_16,strings_onoff[u.tail_tone],ALIGN_CENTER,STYLE_FULL);
 #endif
       }
     }
@@ -855,7 +836,7 @@ void loop()
       {
         if(menu_in==1)          // if in menu
         {
-          display_menu(2);       // send it direct to menu function
+          display_menu(5);       // send it direct to menu function
           delay(200);
         }
         else
