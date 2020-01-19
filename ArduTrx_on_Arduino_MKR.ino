@@ -64,6 +64,9 @@
 #include "ubuntumono_b_8.h"
 DogGraphicDisplay DOG;
 //#include <TimerOne.h>
+#include "hfmodule.h"
+
+Hfmodule dra;
 
 // define inputs and outputs
 #define IN_SQ   2
@@ -594,7 +597,7 @@ void setup()
   u.ardutrx_version|=0x80;  // set bit 7 for DRA818U versions
 #endif
 // set pins
-  pinMode(IN_SQ,INPUT_PULLUP); // SQ
+//  pinMode(IN_SQ,INPUT_PULLUP); // SQ
   pinMode(OUT_BACKLIGHT,OUTPUT); // backlight low=off, high=on
   pinMode(OUT_PTT,OUTPUT); // PTT low=rx, high=tx
   pinMode(OUT_PD,OUTPUT); // PD low=sleep, high=normal
@@ -607,8 +610,9 @@ void setup()
   pinMode (IN_encoder0PinB,INPUT_PULLUP);
   pinMode (IN_encoder0PinSW,INPUT_PULLUP);
 
-// init serial
-  SerialDra.begin(9600); // start serial for communication with dra818
+// init hf module
+  dra.begin(IN_SQ);
+//  SerialDra.begin(9600); // start serial for communication with dra818
 // init display
   DOG.initialize(6,0,0,0,1,DOGM128);   //SS = 6, 0,0= use Hardware SPI, 0 = A0, 1 = RESET, EA DOGM128-6 (=128x64 dots)
   DOG.clear();  //clear whole display
@@ -674,7 +678,8 @@ void loop()
   }
 
 // squelch
-  sqin=digitalRead(IN_SQ);    // read squelch input
+//  sqin=digitalRead(IN_SQ);    // read squelch input
+  sqin=dra.getsquelch();
 #if defined(SA818V) || defined(SA818U)
   if(sqin==0&&menu_in==0)   // squelch and no menu active
   {
