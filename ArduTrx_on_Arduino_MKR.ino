@@ -202,126 +202,7 @@ int read_LCD_buttons()
   return btnNONE;  // when all others fail, return this...
 }
 
-//set frequency and squelch of dra818 
-void send_dra(char *frxbuffer, char *ftxbuffer, int squ, byte ctcss)
-{
-  SerialDra.print("AT+DMOSETGROUP=0,");         // begin message
-  SerialDra.print(ftxbuffer);
-  SerialDra.print(",");
-  SerialDra.print(frxbuffer);
-  SerialDra.print(",00");
-  if(ctcss<10) SerialDra.print("0");   // arduino generates no leading zeros
-  SerialDra.print(ctcss);            // print ctcss
-  SerialDra.print(",");    
-  SerialDra.print(squ);
-  SerialDra.println(",0000");
-}
 
-//set volume of dra818
-void send_dravol(int vol)
-{
-  SerialDra.print("AT+DMOSETVOLUME=");         // begin message
-  SerialDra.println(vol);
-}
-//set filter of dra818
-void send_drafilter(byte pre_de_emph, byte highpass, byte lowpass)
-{
-  SerialDra.print("AT+SETFILTER=");         // begin message
-  SerialDra.print(pre_de_emph);
-  SerialDra.print(",");
-  SerialDra.print(highpass);
-  SerialDra.print(",");
-  SerialDra.println(lowpass);
-}
-//send scan command to dra818 
-byte send_dra_scan(char *frqbuffer)
-{
-  char rxbuffer[10];  // buffer for response string
-  byte rxlen=0;   // counter for received bytes
-  do
-  {
-    SerialDra.print("S+");         // begin message
-    SerialDra.println(frqbuffer);
-    rxlen=SerialDra.readBytesUntil('\n',rxbuffer,4);
-  } while(rxlen==0);    // send command until answer is received
-  if(rxlen==4) rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
-  rxbuffer[rxlen]=0; // remove last byte and end string
-  if(rxbuffer[0]=='S') // check if answer starts with S
-  {
-    if(rxbuffer[2]=='0') return 0;   // there is signal on this frequency
-    else if(rxbuffer[2]=='1') return 1;  // there is no signal on this frequency
-    else return -1;   // something went wrong
-  }
-  else return -1; // something went terribly wrong
-}
-
-//send handshake command to dra818 
-void send_dra_handshake(void)
-{
-  char rxbuffer[20];  // buffer for response string
-  byte rxlen=0;   // counter for received bytes
-  do
-  {
-    SerialDra.println("AT+DMOCONNECT");         // begin message
-    rxlen=SerialDra.readBytesUntil('\n',rxbuffer,19);
-  } while(rxlen==0);    // send command until answer is received
-  rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
-  rxbuffer[rxlen]=0; // remove last byte and end string
-  DOG.string(0,2,UBUNTUMONO_B_16,rxbuffer,ALIGN_CENTER,STYLE_FULL);
-  delay(1000);    // wait a little bit
-}
-
-#if defined(SA818V) || defined(SA818U)
-//set tail tone of sa818
-void send_dra_tail_tone(int vol)
-{
-  SerialDra.print("AT+SETTAIL=");         // begin message
-  SerialDra.println(vol);
-}
-//send version command to sa818 
-void send_dra_version(void)
-{
-  char rxbuffer[25];  // buffer for response string
-  byte rxlen=0;   // counter for received bytes
-  do
-  {
-    SerialDra.println("AT+VERSION");         // begin message
-    rxlen=SerialDra.readBytesUntil('\n',rxbuffer,24);
-  } while(rxlen==0);    // send command until answer is received
-  rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
-  rxbuffer[rxlen]=0; // remove last byte and end string
-  if(rxlen>9) DOG.string(0,2,UBUNTUMONO_B_16,rxbuffer+9,ALIGN_CENTER,STYLE_FULL);
-  delay(1000);    // wait a little bit
-}
-
-//send RSSI command to sa818 
-void send_dra_rssi(byte pos)
-{
-  char rxbuffer[20];  // buffer for response string
-  byte rxlen=0;   // counter for received bytes
-  serial_in_flush();
-  do
-  {
-    SerialDra.println("RSSI?");         // begin message
-    rxlen=SerialDra.readBytesUntil('\n',rxbuffer,19);
-  } while(rxlen==0);    // send command until answer is received
-  rxbuffer[rxlen-1]=0;  // check length of answer and remove cr character
-  rxbuffer[rxlen]=0; // remove last byte and end string
-  if(rxlen>6)
-  {
-    if(pos==0) DOG.string(0,2,UBUNTUMONO_B_16,rxbuffer+5,ALIGN_CENTER,STYLE_FULL);
-    else DOG.string(0,4,UBUNTUMONO_B_8,rxbuffer+5,ALIGN_CENTER);
-  }
-  delay(100);    // wait a little bit
-}
-#endif
-
-// set output power level of dra818
-void set_power_level(byte level)
-{
-  if(level==1) digitalWrite(OUT_H_L,LOW); // 1 W
-  else digitalWrite(OUT_H_L,HIGH); // 0,5 W
-}
 // scan function
 byte frequency_scan(byte dir, byte scan_run)
 {
@@ -342,22 +223,13 @@ byte frequency_scan(byte dir, byte scan_run)
   DOG.string(0,4,UBUNTUMONO_B_16,frxbuffer,ALIGN_CENTER,STYLE_FULL);
   if(scan_run==1) // check if scan is still running
   {
-    rx=send_dra_scan(frxbuffer);  // send command to dra
+    rx=dra.scan(frxbuffer);  // send command to dra
   }
   if(rx==0) DOG.string(0,2,UBUNTUMONO_B_16,"stop",ALIGN_CENTER,STYLE_FULL);
   else DOG.string(0,0,UBUNTUMONO_B_16,"run",ALIGN_CENTER,STYLE_FULL);
   delay(100);   // wait a little bit
   return rx;    // return result
 }
-// flush serial in bufffer
-void serial_in_flush(void)
-{
-  while(SerialDra.available())   // check if bytes available
-  {
-    SerialDra.read();            // and read them all
-  }
-}
-
 // display and menu routines
 // display active menu point inverse
 void display_cursor(int sel, byte level)
@@ -501,7 +373,7 @@ void display_menu(byte action)
   if(action==4) // down
   {
     menu_sub=1;   // enable sub menu
-    if(menu_pointer==0) serial_in_flush();  // clear serial input buffer before we start scan
+    if(menu_pointer==0) dra.serial_in_flush();  // clear serial input buffer before we start scan
     if(menu_pointer==MENU_LENGTH-1) menu_in=0;    // back to main screen
   }
   menu_pointer%=MENU_LENGTH;
@@ -538,13 +410,25 @@ void display_menu(byte action)
         if(menu_pointer==3) DOG.string(0,2,UBUNTUMONO_B_16,strings_onoff[u.filter_highpass],ALIGN_CENTER,STYLE_FULL);
         if(menu_pointer==4) DOG.string(0,2,UBUNTUMONO_B_16,strings_onoff[u.filter_lowpass],ALIGN_CENTER,STYLE_FULL);
         if(menu_pointer==5) DOG.string(0,2,UBUNTUMONO_B_16,"press right",ALIGN_CENTER,STYLE_FULL);
-        if(menu_pointer==6) send_dra_handshake();
+        if(menu_pointer==6) 
+        {
+          DOG.string(0,2,UBUNTUMONO_B_16,dra.handshake(),ALIGN_CENTER,STYLE_FULL);
+          delay(1000);    // wait a little bit
+        }
         if(menu_pointer==7) DOG.string(0,2,UBUNTUMONO_B_16,itoa(analogRead(1)*29,buffer,10),ALIGN_CENTER,STYLE_FULL);
         if(menu_pointer==8) DOG.string(0,2,UBUNTUMONO_B_16,itoa(u.undervoltage,buffer,10),ALIGN_CENTER,STYLE_FULL);
 
 #if defined(SA818V) || defined(SA818U)
-        if(menu_pointer==9) send_dra_version();
-        if(menu_pointer==10) send_dra_rssi(0);
+        if(menu_pointer==9)
+        {
+          DOG.string(0,2,UBUNTUMONO_B_16,dra.getversion(),ALIGN_CENTER,STYLE_FULL);
+          delay(1000);    // wait a little bit
+        }
+        if(menu_pointer==10)
+        {
+          DOG.string(0,2,UBUNTUMONO_B_16,dra.getrssi(0),ALIGN_CENTER,STYLE_FULL);
+          delay(100);    // wait a little bit
+        }
         if(menu_pointer==11) DOG.string(0,2,UBUNTUMONO_B_16,strings_onoff[u.tail_tone],ALIGN_CENTER,STYLE_FULL);
 #endif
       }
@@ -560,7 +444,11 @@ void display_menu(byte action)
         }
 //        if(menu_pointer==7) lcd.print(analogRead(1)*29);
 #if defined(SA818V) || defined(SA818U)
-        if(menu_pointer==10) send_dra_rssi(0);  // update RSSI regularly
+        if(menu_pointer==10)  // update RSSI regularly
+        {
+          DOG.string(0,2,UBUNTUMONO_B_16,dra.getrssi(0),ALIGN_CENTER,STYLE_FULL);
+          delay(100);    // wait a little bit
+        }
 #endif
       }      
     }
@@ -599,19 +487,19 @@ void setup()
 // set pins
 //  pinMode(IN_SQ,INPUT_PULLUP); // SQ
   pinMode(OUT_BACKLIGHT,OUTPUT); // backlight low=off, high=on
-  pinMode(OUT_PTT,OUTPUT); // PTT low=rx, high=tx
-  pinMode(OUT_PD,OUTPUT); // PD low=sleep, high=normal
-  pinMode(OUT_H_L,OUTPUT); // H_L low=1 W, high=0.5 W
+//  pinMode(OUT_PTT,OUTPUT); // PTT low=rx, high=tx
+//  pinMode(OUT_PD,OUTPUT); // PD low=sleep, high=normal
+//  pinMode(OUT_H_L,OUTPUT); // H_L low=1 W, high=0.5 W
   digitalWrite(OUT_BACKLIGHT,HIGH); // backlight on
-  digitalWrite(OUT_PTT,LOW); // rx
-  digitalWrite(OUT_PD,LOW); // normal
-  digitalWrite(OUT_H_L,HIGH); // 0.5 W
+//  digitalWrite(OUT_PTT,LOW); // rx
+//  digitalWrite(OUT_PD,LOW); // normal
+//  digitalWrite(OUT_H_L,HIGH); // 0.5 W
   pinMode (IN_encoder0PinA,INPUT_PULLUP);  // encoder input pins with pullup to avoid problems when encoder no correctly connected
   pinMode (IN_encoder0PinB,INPUT_PULLUP);
   pinMode (IN_encoder0PinSW,INPUT_PULLUP);
 
 // init hf module
-  dra.begin(IN_SQ);
+  dra.begin(IN_SQ,OUT_H_L,OUT_PTT,OUT_PD);
 //  SerialDra.begin(9600); // start serial for communication with dra818
 // init display
   DOG.initialize(6,0,0,0,1,DOGM128);   //SS = 6, 0,0= use Hardware SPI, 0 = A0, 1 = RESET, EA DOGM128-6 (=128x64 dots)
@@ -668,12 +556,12 @@ void loop()
     if((analogRead(1)*29)<u.undervoltage)
     {
       digitalWrite(OUT_BACKLIGHT,LOW); // backlight off
-      digitalWrite(OUT_PD,HIGH); // power down
+      dra.setpowerdown(1); // power down
     }
     else
     {
       digitalWrite(OUT_BACKLIGHT,HIGH); // backlight on
-      digitalWrite(OUT_PD,LOW); // normal
+      dra.setpowerdown(0); // normal
     }
   }
 
@@ -683,7 +571,8 @@ void loop()
 #if defined(SA818V) || defined(SA818U)
   if(sqin==0&&menu_in==0)   // squelch and no menu active
   {
-    send_dra_rssi(1);
+    DOG.string(0,4,UBUNTUMONO_B_8,dra.getrssi(1),ALIGN_CENTER);
+    delay(100);    // wait a little bit
   }
 #endif
   if(sqin!=sqin_old)    // compare if squelch has changed
@@ -719,7 +608,7 @@ void loop()
     if(u.power_level==0) u.power_level=1;    // output = 1W
     else u.power_level=0;    // output = 0.5W
     last_settings_update=millis();  // trigger update
-    set_power_level(u.power_level); // send it to dra818
+    dra.setpowerlevel(u.power_level); // send it to dra818
     Merker = 1;
     display_cursor(sel,u.power_level);
     delay(10);   
@@ -787,13 +676,13 @@ void loop()
           {
             u.power_level=1;    // output = 1W
             last_settings_update=millis();  // trigger update
-            set_power_level(u.power_level); // send it to dra818
+            dra.setpowerlevel(u.power_level); // send it to dra818
             display_cursor(sel,u.power_level);
           }
           if(sel==3)    // menu
           {
             menu_in=1;
-            serial_in_flush();  // clear serial input buffer before we start menu
+            dra.serial_in_flush();  // clear serial input buffer before we start menu
             display_menu(0);
           }
         }
@@ -822,13 +711,13 @@ void loop()
           {
             u.power_level=0;    // output = 0.5W
             last_settings_update=millis();  // trigger update
-            set_power_level(u.power_level); // send it to dra818
+            dra.setpowerlevel(u.power_level); // send it to dra818
             display_cursor(sel,u.power_level);
           }
           if(sel==3)    // menu
           {
             menu_in=1;
-            serial_in_flush();  // clear serial input buffer before we start menu
+            dra.serial_in_flush();  // clear serial input buffer before we start menu
             display_menu(0);
           }
         }
@@ -844,7 +733,7 @@ void loop()
         }
         else
         {
-          digitalWrite(OUT_PTT, HIGH);  // enable PTT
+          dra.setptt(HIGH);  // enable PTT
           tone(OUT_MIC,1750);   // enable 1750 Hz tone
         }
         break;
@@ -856,7 +745,7 @@ void loop()
           display_menu(0);       // send it direct to menu function
         }
         noTone(OUT_MIC);    // disable 1750 Hz tone again
-        digitalWrite(OUT_PTT, LOW);  // disable PTT
+        dra.setptt(LOW);  // disable PTT
         break;
       }
   }
@@ -888,7 +777,7 @@ void loop()
     freqb=(freqtx%80)*125;  // frequency fractional part
     sprintf(ftxbuffer,"%03i.%04i",freqa,freqb);  // generate frequency string
     DOG.string(0,0,UBUNTUMONO_B_32,frxbuffer,ALIGN_CENTER,STYLE_FULL);
-    send_dra(frxbuffer,ftxbuffer,u.sql,u.ctcss);    // update volume on dra818
+    dra.setfrequencysquelch(frxbuffer,ftxbuffer,u.sql,u.ctcss);    // update volume on dra818
     DOG.string(112,6,UBUNTUMONO_B_16,itoa(u.sql,buffer,10));
     if((freqrx>=SPLIT_LIMIT_LOWER)&&(freqrx<=SPLIT_LIMIT_UPPER))   // split function for relais 145.6000 - 145.8000 MHz
     {
@@ -904,7 +793,7 @@ void loop()
   {
     updatevol=0;
     last_settings_update=millis();  // trigger update
-    send_dravol(u.vol);  // update volume on dra818
+    dra.setvolume(u.vol);  // update volume on dra818
     DOG.string(30,6,UBUNTUMONO_B_16,itoa(u.vol,buffer,10));
     display_cursor(sel,u.power_level);
   }
@@ -912,13 +801,13 @@ void loop()
   {
     update_filter=0;
     last_settings_update=millis();  // trigger update
-    send_drafilter(u.filter_pre_de_emph,u.filter_highpass, u.filter_lowpass);  // update filter settings on dra818
+    dra.setfilter(u.filter_pre_de_emph,u.filter_highpass, u.filter_lowpass);  // update filter settings on dra818
   }
   if(update_tail_tone==1)    // update tail tone
   {
     update_tail_tone=0;
     last_settings_update=millis();  // trigger update
-    send_dra_tail_tone(u.tail_tone);  // update tail tone settings on SA818
+    dra.settailtone(u.tail_tone);  // update tail tone settings on SA818
   }
 }
 
